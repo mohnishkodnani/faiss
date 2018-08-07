@@ -10,10 +10,10 @@
 #include <cstdlib>
 #include <cassert>
 
-#include <faiss/IndexFlat.h>
-#include <faiss/gpu/GpuIndexFlat.h>
-#include <faiss/gpu/GpuIndexIVFFlat.h>
-#include <faiss/gpu/StandardGpuResources.h>
+#include "faiss/IndexFlat.h"
+#include "faiss/gpu/GpuIndexFlat.h"
+#include "faiss/gpu/GpuIndexIVFFlat.h"
+#include "faiss/gpu/StandardGpuResources.h"
 
 
 int main() {

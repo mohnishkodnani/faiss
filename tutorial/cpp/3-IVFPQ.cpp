@@ -9,8 +9,8 @@
 #include <cstdio>
 #include <cstdlib>
 
-#include <faiss/IndexFlat.h>
-#include <faiss/IndexIVFPQ.h>
+#include "faiss/IndexFlat.h"
+#include "faiss/IndexIVFPQ.h"
 
 
 int main() {

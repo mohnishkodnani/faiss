@@ -9,11 +9,11 @@
 #include <cstdio>
 #include <cstdlib>
 
-#include <faiss/IndexFlat.h>
-#include <faiss/gpu/GpuAutoTune.h>
-#include <faiss/gpu/GpuIndexFlat.h>
-#include <faiss/gpu/StandardGpuResources.h>
-#include <faiss/gpu/utils/DeviceUtils.h>
+#include "faiss/IndexFlat.h"
+#include "faiss/gpu/GpuAutoTune.h"
+#include "faiss/gpu/GpuIndexFlat.h"
+#include "faiss/gpu/StandardGpuResources.h"
+#include "faiss/gpu/utils/DeviceUtils.h"
 
 
 int main() {
