@@ -14,9 +14,9 @@
 
 #include <gtest/gtest.h>
 
-#include <faiss/IndexIVF.h>
-#include <faiss/IndexBinaryIVF.h>
-#include <faiss/AutoTune.h>
+#include "faiss/IndexIVF.h"
+#include "faiss/IndexBinaryIVF.h"
+#include "faiss/AutoTune.h"
 
 using namespace faiss;
 
