@@ -6,7 +6,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-
+// -*- c++ -*-
 
 #ifndef FAISS_ON_DISK_INVERTED_LISTS_H
 #define FAISS_ON_DISK_INVERTED_LISTS_H
@@ -115,8 +115,6 @@ struct OnDiskInvertedLists: InvertedLists {
     // empty constructor for the I/O functions
     OnDiskInvertedLists ();
 };
-
-
 
 
 } // namespace faiss

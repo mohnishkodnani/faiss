@@ -6,9 +6,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-/* Copyright 2004-present Facebook. All Rights Reserved.
-   Inverted list structure.
-*/
+// -*- c++ -*-
 
 #include "IndexIVF.h"
 
@@ -367,9 +365,10 @@ void IndexIVF::search_and_reconstruct (idx_t n, const float *x, idx_t k,
     }
 }
 
-void IndexIVF::reconstruct_from_offset (long list_no, long offset,
-                                        float* recons) const
-{
+void IndexIVF::reconstruct_from_offset(
+    long /*list_no*/,
+    long /*offset*/,
+    float* /*recons*/) const {
   FAISS_THROW_MSG ("reconstruct_from_offset not implemented");
 }
 
@@ -590,7 +589,6 @@ void IndexIVF::copy_subset_to (IndexIVF & other, int subset_type,
 }
 
 
-
 IndexIVF::~IndexIVF()
 {
     if (own_invlists) {
@@ -606,7 +604,6 @@ void IndexIVFStats::reset()
 
 
 IndexIVFStats indexIVF_stats;
-
 
 
 } // namespace faiss

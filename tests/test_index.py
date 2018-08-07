@@ -106,8 +106,8 @@ class EvalIVFPQAccuracy(unittest.TestCase):
         D, nns = index.search(xq, 10)
         n_ok = (nns == gt_nns).sum()
 
-        # should return 170
-        self.assertGreater(n_ok, 169)
+        # Should return 166 on mac, and 170 on linux.
+        self.assertGreater(n_ok, 165)
 
         ############# replace with explicit assignment indexes
         nbits = 5
@@ -132,7 +132,7 @@ class EvalIVFPQAccuracy(unittest.TestCase):
         n_ok = (nns == gt_nns).sum()
 
         # should return the same result
-        self.assertGreater(n_ok, 169)
+        self.assertGreater(n_ok, 165)
 
 
     def test_IMI_2(self):
@@ -163,8 +163,7 @@ class EvalIVFPQAccuracy(unittest.TestCase):
         n_ok = (nns == gt_nns).sum()
 
         # should return the same result
-        self.assertGreater(n_ok, 169)
-
+        self.assertGreater(n_ok, 165)
 
 
 
@@ -225,7 +224,7 @@ class TestScalarQuantizer(unittest.TestCase):
         D, I = index.search(xq, 10)
         nok['flat'] = (I[:, 0] == I_ref[:, 0]).sum()
 
-        for qname in "QT_4bit QT_4bit_uniform QT_8bit QT_8bit_uniform".split():
+        for qname in "QT_4bit QT_4bit_uniform QT_8bit QT_8bit_uniform QT_fp16".split():
             qtype = getattr(faiss.ScalarQuantizer, qname)
             index = faiss.IndexIVFScalarQuantizer(quantizer, d, ncent,
                                                   qtype, faiss.METRIC_L2)
@@ -237,6 +236,7 @@ class TestScalarQuantizer(unittest.TestCase):
 
             nok[qname] = (I[:, 0] == I_ref[:, 0]).sum()
         print(nok, nq)
+
         self.assertGreaterEqual(nok['flat'], nq * 0.6)
         # The tests below are a bit fragile, it happens that the
         # ordering between uniform and non-uniform are reverted,
@@ -246,6 +246,7 @@ class TestScalarQuantizer(unittest.TestCase):
         self.assertGreaterEqual(nok['QT_8bit'], nok['QT_4bit'])
         self.assertGreaterEqual(nok['QT_8bit'], nok['QT_8bit_uniform'])
         self.assertGreaterEqual(nok['QT_4bit'], nok['QT_4bit_uniform'])
+        self.assertGreaterEqual(nok['QT_fp16'], nok['QT_8bit'])
 
     def test_4variants(self):
         d = 32
@@ -261,7 +262,7 @@ class TestScalarQuantizer(unittest.TestCase):
 
         nok = {}
 
-        for qname in "QT_4bit QT_4bit_uniform QT_8bit QT_8bit_uniform".split():
+        for qname in "QT_4bit QT_4bit_uniform QT_8bit QT_8bit_uniform QT_fp16".split():
             qtype = getattr(faiss.ScalarQuantizer, qname)
             index = faiss.IndexScalarQuantizer(d, qtype, faiss.METRIC_L2)
             index.train(xt)
@@ -271,10 +272,13 @@ class TestScalarQuantizer(unittest.TestCase):
 
             nok[qname] = (I[:, 0] == I_ref[:, 0]).sum()
 
+        print(nok, nq)
+
         self.assertGreaterEqual(nok['QT_8bit'], nq * 0.9)
         self.assertGreaterEqual(nok['QT_8bit'], nok['QT_4bit'])
         self.assertGreaterEqual(nok['QT_8bit'], nok['QT_8bit_uniform'])
         self.assertGreaterEqual(nok['QT_4bit'], nok['QT_4bit_uniform'])
+        self.assertGreaterEqual(nok['QT_fp16'], nok['QT_8bit'])
 
 
 class TestRangeSearch(unittest.TestCase):
@@ -475,78 +479,6 @@ class TestHNSW(unittest.TestCase):
 
         self.io_and_retest(index, Dhnsw, Ihnsw)
 
-
-def make_binary_dataset(d, nb, nt, nq):
-    assert d % 8 == 0
-    x = np.random.randint(256, size=(nb + nq + nt, int(d / 8))).astype('uint8')
-    return x[:nt], x[nt:-nq], x[-nq:]
-
-
-def binary_to_float(x):
-    n, d = x.shape
-    x8 = x.reshape(n * d, -1)
-    c8 = 2 * ((x8 >> np.arange(8)) & 1).astype('int8') - 1
-    return c8.astype('float32').reshape(n, d * 8)
-
-
-def binary_dis(x, y):
-    return sum([faiss.popcount64(int(xi ^ yi)) for xi, yi in zip(x, y)])
-
-
-class TestBinaryPQ(unittest.TestCase):
-    """ Use a PQ that mimicks a binary encoder """
-
-    def test_encode_to_binary(self):
-        d = 256
-        nt = 256
-        nb = 1500
-        nq = 500
-        (xt, xb, xq) = make_binary_dataset(d, nb, nt, nq)
-        pq = faiss.ProductQuantizer(d, int(d / 8), 8)
-
-        centroids = binary_to_float(
-            np.tile(np.arange(256), int(d / 8)).astype('uint8').reshape(-1, 1))
-
-        faiss.copy_array_to_vector(centroids.ravel(), pq.centroids)
-        pq.is_trained = True
-
-        codes = pq.compute_codes(binary_to_float(xb))
-
-        assert np.all(codes == xb)
-
-        indexpq = faiss.IndexPQ(d, int(d / 8), 8)
-        indexpq.pq = pq
-        indexpq.is_trained = True
-
-        indexpq.add(binary_to_float(xb))
-        D, I = indexpq.search(binary_to_float(xq), 3)
-
-        for i in range(nq):
-            for j, dj in zip(I[i], D[i]):
-                ref_dis = binary_dis(xq[i], xb[j])
-                assert 4 * ref_dis == dj
-
-        nlist = 32
-        quantizer = faiss.IndexFlatL2(d)
-        # pretext class for training
-        iflat = faiss.IndexIVFFlat(quantizer, d, nlist)
-        iflat.train(binary_to_float(xt))
-
-        indexivfpq = faiss.IndexIVFPQ(quantizer, d, nlist, int(d / 8), 8)
-
-        indexivfpq.pq = pq
-        indexivfpq.is_trained = True
-        indexivfpq.by_residual = False
-
-        indexivfpq.add(binary_to_float(xb))
-        indexivfpq.nprobe = 4
-
-        D, I = indexivfpq.search(binary_to_float(xq), 3)
-
-        for i in range(nq):
-            for j, dj in zip(I[i], D[i]):
-                ref_dis = binary_dis(xq[i], xb[j])
-                assert 4 * ref_dis == dj
 
 
 if __name__ == '__main__':
