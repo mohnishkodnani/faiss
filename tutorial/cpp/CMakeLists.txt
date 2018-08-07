@@ -1,5 +1,5 @@
 file(GLOB srcs ${CMAKE_CURRENT_SOURCE_DIR}/*.cpp)
-include_directories(../../..)
+include_directories(../..)
 # Build each source file independently
 foreach(source ${srcs})
     get_filename_component(name ${source} NAME_WE)
